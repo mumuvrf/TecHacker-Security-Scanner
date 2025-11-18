@@ -1,9 +1,10 @@
 import datetime
+from pathlib import Path
 
 class ReportGenerator:
     def __init__(self, url, filename, vulnerabilities):
         self.url = url
-        self.filename = filename
+        self.filepath = Path('results') / filename
         self.vulnerabilities = vulnerabilities
 
     def generate_markdown_report(self) -> str:
@@ -114,7 +115,7 @@ class ReportGenerator:
         
         full_report = "\n".join(report_content)
 
-        with open(self.filename+".md", "w", encoding="utf-8") as f:
+        with open(f"{self.filepath}.md", "w", encoding="utf-8") as f:
             f.write(full_report)
 
         return

@@ -1,9 +1,7 @@
 import sys
 from scanner import Scanner
 from report_generator import ReportGenerator
-
-def generate_filename():
-    return "report_0"
+from utils.tools import generate_filename
 
 if __name__ == "__main__":
     if(len(sys.argv) > 1):
