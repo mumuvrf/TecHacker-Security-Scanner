@@ -1,10 +1,12 @@
 import datetime
 
 class ReportGenerator:
-    def __init__(self, vulnerabilities):
+    def __init__(self, url, filename, vulnerabilities):
+        self.url = url
+        self.filename = filename
         self.vulnerabilities = vulnerabilities
 
-    def generate_markdown_report(vulnerabilities: list, target_url: str) -> str:
+    def generate_markdown_report(self) -> str:
         """
         Gera um relatório completo de vulnerabilidades no formato Markdown.
 
@@ -26,7 +28,7 @@ class ReportGenerator:
         # Agrupamento das vulnerabilidades por Nível de Risco
         grouped_vulnerabilities = {risk: [] for risk in risk_order}
 
-        for vuln in vulnerabilities:
+        for vuln in self.vulnerabilities:
             risk = vuln.get("risk", "Informacional") # Default para Informacional se faltar
             if risk in risk_counts:
                 risk_counts[risk] += 1
@@ -39,7 +41,7 @@ class ReportGenerator:
         
         # Título Principal e Metadados
         report_content.append(f"# 🛡️ Relatório de Varredura de Vulnerabilidades")
-        report_content.append(f"\n* **Alvo (URL/IP):** `{target_url}`")
+        report_content.append(f"\n* **Alvo (URL/IP):** `{self.url}`")
         report_content.append(f"* **Data do Scan:** {report_date}")
         report_content.append(f"* **Total de Descobertas:** **{total_findings}**\n")
         report_content.append("---")
@@ -110,4 +112,9 @@ class ReportGenerator:
         report_content.append("\n## Fim do Relatório")
         report_content.append("A segurança é um processo contínuo. Este relatório serve como ponto de partida para a remediação.")
         
-        return "\n".join(report_content)
+        full_report = "\n".join(report_content)
+
+        with open(self.filename+".md", "w", encoding="utf-8") as f:
+            f.write(full_report)
+
+        return

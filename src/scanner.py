@@ -13,6 +13,9 @@ class Scanner:
         self.url = url
         self.vulnerabilities = []
 
+    def getVulnerabilities(self):
+        return self.vulnerabilities
+
     def detect_csrf_vulnerabilities(self):
         """
         Detecta potenciais vulnerabilidades de CSRF em uma URL e retorna
@@ -171,3 +174,7 @@ class Scanner:
                     self.vulnerabilities.append(vuln_entry)
 
         return
+    
+    def run(self):
+        self.detect_csrf_vulnerabilities()
+        self.nmap_vulnerability_scan()
