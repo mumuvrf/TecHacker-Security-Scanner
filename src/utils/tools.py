@@ -8,6 +8,9 @@ def generate_uuid():
     raw_uuid = str(uuid.uuid4())
     return raw_uuid
 
-def generate_filename():
+def generate_filename() -> str:
+    """
+    Gera um nome único (str) para o arquivo de relatório a partir de um ID.
+    """
     id = generate_uuid()
     return f"report_{id}"
