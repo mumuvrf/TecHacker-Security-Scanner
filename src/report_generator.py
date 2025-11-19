@@ -68,7 +68,7 @@ class ReportGenerator:
         with open(f"{self.filepath}.json", "w", encoding="utf-8") as f:
             f.write(json_output)
             
-        return json_output
+        return report_data
 
     def generate_markdown_report(self) -> str:
         """
