@@ -22,6 +22,54 @@ class ReportGenerator:
         
         self.total_findings = sum(self.risk_counts.values())
 
+    def generate_json_report(self) -> str:
+        """
+        Gera um relatório completo das vulnerabilidades no formato JSON.
+
+        Returns:
+            str: Uma string JSON contendo todos os dados do relatório.
+        """
+        
+        # 1. Constrói o Dicionário de Dados Raiz
+        # Agrupa metadados, estatísticas e o detalhamento das vulnerabilidades.
+        report_data = {
+            "metadata": {
+                "target_url": self.url,
+                "scan_date": self.report_date,
+                "total_findings": self.total_findings,
+            },
+            
+            "summary": {
+                "risk_counts": self.risk_counts,
+                "risk_priority_order": self.risk_order,
+                "critical_high_count": self.risk_counts.get("Crítico", 0) + self.risk_counts.get("Alto", 0)
+            },
+            
+            # 2. Detalhes das Vulnerabilidades
+            # Inclui a lista de vulnerabilidades em ordem decrescente de risco.
+            "vulnerabilities": []
+        }
+        
+        # Preenche a lista de vulnerabilidades, mantendo a ordem de risco
+        for risk_level in self.risk_order:
+            # Pega a lista pré-agrupada (que já contém o formato padronizado)
+            findings = self.grouped_vulnerabilities[risk_level]
+            
+            if findings:
+                # Adiciona todos os achados daquele nível de risco à lista principal
+                report_data["vulnerabilities"].extend(findings)
+
+        # 3. Serializa o dicionário para uma string JSON
+        # indent=2 é usado para legibilidade, mas pode ser removido (ou alterado para None)
+        # se o foco for compactação máxima para um endpoint de API.
+        json_output = json.dumps(report_data, indent=2, ensure_ascii=False)
+        
+        # Opcional: Salva o arquivo JSON
+        with open(f"{self.filepath}.json", "w", encoding="utf-8") as f:
+            f.write(json_output)
+            
+        return json_output
+
     def generate_markdown_report(self) -> str:
         """
         Gera o relatório completo de vulnerabilidades no formato Markdown aprimorado.
