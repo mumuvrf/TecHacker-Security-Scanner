@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  # Serviço do Back-end (FastAPI)
+  backend:
+    container_name: fastapi_backend
+    # Configura como construir a imagem
+    build:
+      context: . # O contexto é o diretório raiz do projeto
+      dockerfile: ./src/Dockerfile # Especifica o Dockerfile dentro de src/
+    
+    # Mapeia a porta interna 8000 para a porta externa 8000
+    ports:
+      - "8000:8000"
+    
+    # Cria a rede para comunicação com o front-end
+    networks:
+      - app_network
+    
+    # Opcional: Montar volumes para desenvolvimento (permite auto-reload)
+    # Se você quiser desenvolvimento local com volumes, descomente as linhas abaixo
+    # volumes:
+    #   - ./src:/app
+    
+    # Reinicia o container se ele falhar
+    restart: always
+
+  # Serviço do Front-end (React/Vite com Nginx)
+  frontend:
+    container_name: react_frontend
+    # Configura como construir a imagem
+    build:
+      context: ./dashboard-scanner # O contexto é o diretório do front-end
+      dockerfile: ./Dockerfile # Especifica o Dockerfile
+    
+    # **AJUSTADO:** Mapeia a porta interna 80 (do Nginx) para a porta externa 5173
+    ports:
+      - "5173:80"
+    
+    # Depende do backend estar pronto para garantir que a rede seja criada
+    depends_on:
+      - backend
+      
+    networks:
+      - app_network
+      
+    # Reinicia o container se ele falhar
+    restart: always
+
+# Definição da rede para que os containers possam se comunicar pelo nome do serviço
+networks:
+  app_network:
+    driver: bridge
