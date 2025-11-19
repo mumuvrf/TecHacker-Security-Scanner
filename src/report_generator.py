@@ -1,11 +1,9 @@
 import datetime
 import json
-from pathlib import Path
 
 class ReportGenerator:
-    def __init__(self, url, filename, vulnerabilities):
+    def __init__(self, url, vulnerabilities):
         self.url = url
-        self.filepath = Path('results') / filename
         self.vulnerabilities = vulnerabilities
         self.report_date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self.risk_order = ["Crítico", "Alto", "Médio", "Baixo", "Informacional"]
@@ -64,9 +62,9 @@ class ReportGenerator:
         # se o foco for compactação máxima para um endpoint de API.
         json_output = json.dumps(report_data, indent=2, ensure_ascii=False)
         
-        # Opcional: Salva o arquivo JSON
-        with open(f"{self.filepath}.json", "w", encoding="utf-8") as f:
-            f.write(json_output)
+        # # Opcional: Salva o arquivo JSON
+        # with open(f"{self.filepath}.json", "w", encoding="utf-8") as f:
+        #     f.write(json_output)
             
         return report_data
 
@@ -175,7 +173,4 @@ class ReportGenerator:
         
         full_report = "\n".join(report_content)
 
-        with open(f"{self.filepath}.md", "w", encoding="utf-8") as f:
-            f.write(full_report)
-
-        return
+        return full_report
