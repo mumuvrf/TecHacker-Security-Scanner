@@ -1,11 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import os
+import subprocess
+import json
+import requests
+
 from libnmap.process import NmapProcess
 from libnmap.parser import NmapParser, NmapParserException
-
-import requests
 from bs4 import BeautifulSoup
+
 from urllib.parse import urljoin, urlparse
 
 class Scanner:
@@ -107,6 +111,112 @@ class Scanner:
             })
 
         return
+    
+    def wapiti_automated_scan(self):
+        """
+        Executa um scan automatizado com o Wapiti e processa os resultados JSON.
+        Inclui mapeamento de mitigação específica por tipo de vulnerabilidade.
+        """
+        print(f"[*] Executando Wapiti scan em: {self.url}...")
+        output_file = "wapiti_report.json"
+        
+        command = [
+            "wapiti",
+            "-u", self.url,
+            "-f", "json",
+            "-o", output_file,
+            # Configuração padrão de scan completo (pode ser ajustada)
+        ]
+        
+        # Mapeamento de Mitigação Otimizado
+        MITIGATION_MAPPING = {
+            "SQL Injection": "Sempre use **Prepared Statements** (Consultas Parametrizadas) ou **Stored Procedures** para separar o código SQL dos dados fornecidos pelo usuário.",
+            "Cross Site Scripting (XSS)": "Aplique **codificação de saída (Output Encoding)** em todos os dados fornecidos pelo usuário antes de renderizá-los no HTML, especialmente em tags como `<script>`, `onerror`, e `href`.",
+            "Local File Inclusion (LFI) / Path Traversal": "Evite passar entradas do usuário diretamente para funções de manipulação de sistema de arquivos. Use uma **whitelist** de nomes de arquivo permitidos.",
+            "Server Side Request Forgery (SSRF)": "Implemente uma **whitelist** de URLs ou IPs internos que o servidor não pode acessar. Valide e filtre rigorosamente a entrada de URL fornecida pelo usuário.",
+            "Header Injection": "Nunca inclua entradas do usuário diretamente em cabeçalhos HTTP de resposta sem saneamento. Limite a entrada a caracteres alfanuméricos.",
+            "Command Execution": "Nunca passe entradas não validadas para funções que executam comandos do sistema operacional (e.g., `os.system`). Use **APIs seguras** específicas da linguagem.",
+            "Information Disclosure": "Remova banners de servidor, mensagens de erro detalhadas (stack traces) e caminhos de arquivo dos outputs públicos. Configure o servidor para não listar diretórios."
+        }
+        
+        RISK_MAPPING = {
+            "critical": "Crítico",
+            "high": "Alto",
+            "medium": "Médio",
+            "low": "Baixo",
+            "info": "Informacional"
+        }
+
+        try:
+            process = subprocess.run(command, capture_output=True, text=True, timeout=600) 
+            
+            if process.returncode != 0:
+                print(f"[!] Erro ao executar Wapiti (RC: {process.returncode}): {process.stderr}")
+                self.vulnerabilities.append({
+                    "type": "Erro de Scan - Wapiti",
+                    "description": f"Falha na execução do Wapiti. Mensagem: {process.stderr.strip()}",
+                    "risk": "Informacional",
+                    "mitigation": "Instalar ou verificar a instalação e o PATH do Wapiti.",
+                    "technical_details": {"url": self.url}
+                })
+                return
+
+            if os.path.exists(output_file):
+                with open(output_file, 'r') as f:
+                    report = json.load(f)
+
+                for category_data in report.get('vulnerabilities', []):
+                    category_name = category_data.get('category', 'Vulnerabilidade Desconhecida')
+                    risk_level = category_data.get('level', 'info').lower()
+                    
+                    specific_mitigation = MITIGATION_MAPPING.get(category_name, 
+                        "Consulte a documentação da OWASP para esta vulnerabilidade e siga as melhores práticas de desenvolvimento seguro (SDLC)."
+                    )
+
+                    for vulnerability in category_data.get('vulnerabilities', []):
+                        self.vulnerabilities.append({
+                            "type": f"Wapiti - {category_name}",
+                            "description": vulnerability.get('info', 'Detalhes não fornecidos pelo scanner.'),
+                            "risk": RISK_MAPPING.get(risk_level, 'Informacional'),
+                            "mitigation": specific_mitigation,
+                            "technical_details": {
+                                "url": vulnerability.get('url'),
+                                "parameter": vulnerability.get('parameter'),
+                                "attack_type": vulnerability.get('attack')
+                            }
+                        })
+                
+            else:
+                self.vulnerabilities.append({
+                    "type": "Erro de Scan - Wapiti",
+                    "description": "O Wapiti foi executado, mas o arquivo de relatório JSON não foi encontrado.",
+                    "risk": "Informacional",
+                    "mitigation": "Verificar as permissões e o diretório de saída do Wapiti.",
+                    "technical_details": {"file": output_file}
+                })
+
+        except subprocess.TimeoutExpired:
+            self.vulnerabilities.append({
+                "type": "Erro de Scan - Wapiti",
+                "description": "O Wapiti atingiu o tempo limite de execução (600 segundos).",
+                "risk": "Informacional",
+                "mitigation": "Aumentar o tempo limite ou rodar o scan manualmente.",
+                "technical_details": {"url": self.url}
+            })
+        except Exception as e:
+            self.vulnerabilities.append({
+                "type": "Erro de Processamento",
+                "description": f"Erro ao processar a saída do Wapiti: {e}",
+                "risk": "Informacional",
+                "mitigation": "Revisar o código de processamento da saída JSON.",
+                "technical_details": {"url": self.url}
+            })
+
+        finally:
+            if os.path.exists(output_file):
+                os.remove(output_file)
+        
+        return
 
     def nmap_vulnerability_scan(self, options = "-sV -sS"):
         """
@@ -182,4 +292,5 @@ class Scanner:
     
     def run(self):
         self.detect_csrf_vulnerabilities()
+        self.wapiti_automated_scan()
         self.nmap_vulnerability_scan()
