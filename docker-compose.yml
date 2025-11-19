@@ -31,7 +31,7 @@ services:
     # Configura como construir a imagem
     build:
       context: ./dashboard-scanner # O contexto é o diretório do front-end
-      dockerfile: ./dashboard-scanner/Dockerfile # Especifica o Dockerfile
+      dockerfile: ./Dockerfile # Especifica o Dockerfile
     
     # **AJUSTADO:** Mapeia a porta interna 80 (do Nginx) para a porta externa 5173
     ports:

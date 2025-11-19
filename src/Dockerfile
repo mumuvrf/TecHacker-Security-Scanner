@@ -22,7 +22,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copia o código da aplicação
 # O conteúdo de /src (o app.py) será copiado para /app no container
-COPY . /app
+COPY src/ /app
 
 # Expõe a porta que o FastAPI usará
 EXPOSE 8000
