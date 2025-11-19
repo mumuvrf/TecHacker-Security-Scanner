@@ -43,10 +43,14 @@ class Scanner:
 
             # 2. Análise de Cookies (Atributo SameSite)
             for cookie in session.cookies:
-                samesite_attr = cookie.samesite.lower() if cookie.samesite else 'none'
+                samesite_val = cookie._rest.get('SameSite') or cookie._rest.get('samesite')
                 
+                # Normaliza para lowercase para comparação, se existir
+                samesite_attr = samesite_val.lower() if samesite_val else 'none'
+                # ---------------------
+
                 # Condição: SameSite ausente ou configurado como 'None'
-                if not cookie.samesite or samesite_attr == 'none':
+                if not samesite_val or samesite_attr == 'none':
                     self.vulnerabilities.append({
                         "type": "CSRF - Configuração Insegura de Cookie",
                         "description": f"O cookie '{cookie.name}' não possui o atributo 'SameSite=Strict' ou 'SameSite=Lax'.",
@@ -55,7 +59,7 @@ class Scanner:
                         "technical_details": {
                             "name": cookie.name,
                             "value": cookie.value,
-                            "samesite_status": cookie.samesite
+                            "samesite_status": samesite_val # Usa a variável corrigida
                         }
                     })
 
