@@ -6,11 +6,12 @@ from libnmap.parser import NmapParser, NmapParserException
 
 import requests
 from bs4 import BeautifulSoup
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 
 class Scanner:
     def __init__(self, url):
         self.url = url
+        self.hostname = urlparse(self.url).hostname
         self.vulnerabilities = []
 
     def getVulnerabilities(self):
@@ -116,7 +117,7 @@ class Scanner:
         """
         
         # Execução do Processo Nmap
-        nm = NmapProcess(self.url, options)
+        nm = NmapProcess(self.hostname, options)
         rc = nm.run()
 
         if rc != 0:
